@@ -42,6 +42,6 @@ class TestController {
     @GetMapping("/send")
     @ResponseBody
     fun sendRequest(): String?{
-        return restService.callEverythingApi()
+        return restService.callEverythingApi().get("status")
     }
 }

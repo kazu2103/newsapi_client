@@ -1,5 +1,5 @@
 package com.kazu.newsapi.client.service
 
 interface RestService {
-    fun callEverythingApi(): String
+    fun callEverythingApi(): Map<String, String>
 }

@@ -11,7 +11,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
-class RestServiceImpl(private val restTemplate: RestTemplate) : RestService {
+class RestServiceImpl(private val restTemplate: RestTemplate, resultMap: MutableMap<String, String>) : RestService, AbstractService(
+    resultMap
+) {
 
     @Value("\${newsapi.client.apikey}")
     lateinit var apikey: String
@@ -19,7 +21,13 @@ class RestServiceImpl(private val restTemplate: RestTemplate) : RestService {
     @Value("\${newsapi.client.url}")
     lateinit var url: String
 
-    override fun callEverythingApi(): String{
+    override fun callEverythingApi(): Map<String, String>{
+
+        // store a result data of this method process
+        resultMap = mutableMapOf(
+            resultStatusStr to "NORMAL",
+            resultMessageStr to ""
+        )
 
         val requestModel: NewsApiRequestModel = NewsApiRequestModel(
             apiKey = apikey
@@ -27,12 +35,17 @@ class RestServiceImpl(private val restTemplate: RestTemplate) : RestService {
         val response: NewsApiResponseModel? = restTemplate.getForObject(url, NewsApiResponseModel::class.java)
 
         if (response == null){
-            return "result was not found."
+            resultMap.set(resultStatusStr, "WARN")
+            resultMap.set(resultMessageStr, "result was not found.")
+            return resultMap
         }
         else if ( !"ok".equals(response.status)) {
-            return "response.status is error, code[${response.code}], message[${response.code}]"
+            resultMap.set(resultStatusStr, "WARN")
+            resultMap.set(resultMessageStr, "response.status is error, code[${response.code}], message[${response.code}]")
+            return resultMap
         }
 
+        // TODO 一括インサートしたい。
         for(a in response.articles!!){
             transaction {
                 val article = ArticleDao.new {
@@ -52,7 +65,8 @@ class RestServiceImpl(private val restTemplate: RestTemplate) : RestService {
                 }
             }
         }
-        return response.toString()
+
+        return resultMap
     }
 
 }
